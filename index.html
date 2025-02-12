@@ -1,13 +1,32 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + TS</title>
+    <title>AI Model Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+      }
+      #image-container {
+        margin: 20px;
+      }
+      img {
+        max-width: 300px;
+        border: 1px solid #ddd;
+      }
+      #result {
+        margin-top: 20px;
+        font-size: 18px;
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <h1>QuickDraw AI Model Test</h1>
+    <input type="file" id="upload" accept="image/*" />
+    <div id="image-container"></div>
+    <p id="result">Upload an image to classify</p>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>
