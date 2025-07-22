@@ -2,31 +2,424 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Model Test</title>
+    <title>AI Road Shape Detector</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        text-align: center;
+        color: #4a5568;
+        margin-bottom: 10px;
+        font-size: 2.2em;
+        font-weight: 600;
+      }
+
+      .model-status {
+        text-align: center;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+        background: #f7fafc;
+        border: 2px solid #e2e8f0;
+        font-weight: 500;
+        font-size: 1.1em;
+      }
+
+      .upload-area {
+        border: 3px dashed #cbd5e0;
+        border-radius: 12px;
+        padding: 60px 20px;
+        text-align: center;
+        margin: 30px 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8fafc;
+      }
+
+      .upload-area:hover {
+        border-color: #667eea;
+        background: #edf2f7;
+        transform: translateY(-2px);
+      }
+
+      .upload-label {
+        font-size: 1.3em;
+        color: #4a5568;
+        font-weight: 500;
+      }
+
+      .upload-label small {
+        display: block;
+        margin-top: 8px;
+        color: #718096;
+        font-size: 0.9em;
+      }
+
+      #upload-input {
+        display: none;
+      }
+
+      #image-container {
+        margin: 30px 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+      }
+
+      .image-wrapper {
+        background: #f7fafc;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+        flex: 1;
+        min-width: 250px;
+      }
+
+      .image-wrapper h4 {
+        margin: 0 0 15px 0;
+        color: #2d3748;
+        font-size: 1.1em;
+      }
+
+      .image-wrapper img,
+      .image-wrapper canvas {
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      #result {
+        margin-top: 30px;
+        padding: 25px;
+        background: #f7fafc;
+        border-radius: 12px;
+        border-left: 5px solid #667eea;
+        font-size: 1.1em;
+        line-height: 1.6;
+      }
+
+      /* AI Shape detection specific styles */
+      .shapes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 25px;
+        margin-top: 25px;
+      }
+
+      .shape-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
         text-align: center;
       }
-      #image-container {
-        margin: 20px;
+
+      .shape-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
       }
-      img {
-        max-width: 300px;
-        border: 1px solid #ddd;
+
+      /* Dual thumbnail layout */
+      .shape-thumbnails {
+        margin-bottom: 20px;
       }
-      #result {
-        margin-top: 20px;
-        font-size: 18px;
+
+      .thumbnail-pair {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        align-items: flex-start;
+      }
+
+      .thumbnail-item {
+        flex: 1;
+        text-align: center;
+      }
+
+      .thumbnail-item h5 {
+        margin: 0 0 8px 0;
+        font-size: 0.85em;
+        color: #718096;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .thumbnail-item img {
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        background: #f8fafc;
+        transition: transform 0.2s ease;
+      }
+
+      .thumbnail-item img:hover {
+        transform: scale(1.05);
+        border-color: #4caf50;
+      }
+
+      /* Shape info styling */
+      .shape-info h4 {
+        margin: 0 0 8px 0;
+        color: #2d3748;
+        font-size: 1.3em;
+        font-weight: 600;
+      }
+
+      .description {
+        margin: 0 0 15px 0;
+        color: #4a5568;
+        font-style: italic;
+        font-size: 0.95em;
+        line-height: 1.4;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 15px;
+      }
+
+      .metrics p {
+        margin: 0;
+        padding: 8px;
+        background: #f7fafc;
+        border-radius: 6px;
+        font-size: 0.85em;
+        border: 1px solid #e2e8f0;
+      }
+
+      .confidence {
+        font-weight: 600 !important;
+        grid-column: 1 / -1;
+        background: #edf2f7 !important;
+        border-color: #cbd5e0 !important;
+      }
+
+      .area,
+      .complexity,
+      .vertices {
+        color: #718096 !important;
+        font-size: 0.8em !important;
+      }
+
+      .tips {
+        margin-top: 40px;
+        padding: 25px;
+        background: #f0f4f8;
+        border-radius: 12px;
+        border: 1px solid #bee3f8;
+      }
+
+      .tips h3,
+      .tips h4 {
+        color: #2c5282;
+        margin-top: 0;
+        margin-bottom: 15px;
+      }
+
+      .tips ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .tips li {
+        margin-bottom: 8px;
+        color: #2d3748;
+        line-height: 1.5;
+      }
+
+      .tips strong {
+        color: #2c5282;
+      }
+
+      .loading {
+        text-align: center;
+        color: #718096;
+        font-style: italic;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .container {
+          margin: 10px;
+          padding: 20px;
+        }
+
+        h1 {
+          font-size: 1.8em;
+        }
+
+        .upload-area {
+          padding: 40px 15px;
+        }
+
+        .shapes-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+
+        .shape-card {
+          padding: 15px;
+        }
+
+        .thumbnail-pair {
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .thumbnail-item img {
+          width: 100px;
+          height: 100px;
+        }
+
+        .metrics {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+
+        #image-container {
+          flex-direction: column;
+        }
+      }
+
+      /* Mobile adjustments for very small screens */
+      @media (max-width: 480px) {
+        .thumbnail-item img {
+          width: 80px;
+          height: 80px;
+        }
+
+        .shape-card {
+          padding: 12px;
+        }
+
+        h1 {
+          font-size: 1.6em;
+        }
+      }
+
+      /* Animation for results */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .shape-card {
+        animation: fadeInUp 0.6s ease-out;
+      }
+
+      .shapes-grid {
+        animation: fadeIn 0.8s ease-out;
+      }
+
+      /* AI detection emphasis */
+      #result h3 {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+      }
+
+      /* No results message styling */
+      #result p[style*="italic"] {
+        background: #fef5e7;
+        border: 1px solid #fed7aa;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      /* Enhanced visual feedback */
+      .shape-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        border-radius: 15px 15px 0 0;
+      }
+
+      .shape-card {
+        position: relative;
+        overflow: hidden;
       }
     </style>
   </head>
+
   <body>
-    <h1>QuickDraw AI Model Test</h1>
-    <input type="file" id="upload" accept="image/*" />
-    <div id="image-container"></div>
-    <p id="result">Upload an image to classify</p>
-    <script type="module" src="/src/main.js"></script>
+    <div class="container">
+      <h1>🤖 AI Road Shape Detector</h1>
+
+      <div class="model-status" id="model-status">
+        Loading AI shape detector...
+      </div>
+
+      <div class="upload-area">
+        <div class="upload-label">
+          📁 Click here to upload a map image<br />
+          <small>AI will find ANY road shapes with dual thumbnail views</small>
+        </div>
+        <input type="file" id="upload-input" accept="image/*" />
+      </div>
+
+      <div id="image-container"></div>
+
+      <div id="result" class="loading">
+        Upload a map image to find road shapes
+      </div>
+    </div>
+
+    <script
+      async
+      src="https://docs.opencv.org/4.5.0/opencv.js"
+      onload="onOpenCvReady();"
+      type="text/javascript"
+    ></script>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
